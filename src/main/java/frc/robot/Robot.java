@@ -8,8 +8,19 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import jaci.pathfinder.Trajectory;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import jaci.pathfinder.*;
+import jaci.pathfinder.modifiers.*;
+import com.kauailabs.navx.frc.AHRS;
+
+import edu.wpi.first.wpilibj.SPI;
+import jaci.pathfinder.followers.*;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -24,7 +35,12 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private Trajectory _currentAutoTrajectory;
-
+  private WPI_TalonSRX _leftMasterDrive;
+  private WPI_TalonSRX _rightMasterDrive;
+  private DifferentialDrive _drive;
+  private AHRS _ahrs;
+  private boolean _isNavX;
+  
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
@@ -90,8 +106,6 @@ public class Robot extends TimedRobot {
       new Waypoint(1, 1, Pathfinder.d2r(45))    
     };
     _currentAutoTrajectory = this.setMotionProfile(points);
-
-    
     System.out.println("Auto selected: " + m_autoSelected);
   }
 
@@ -100,9 +114,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    
     this.runMotionProfile(_currentAutoTrajectory);
-
   }
 
   /**
@@ -110,6 +122,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
+    SmartDashboard.putNumber("Left Encoder", _leftMasterDrive.getSelectedSensorPosition(0));
+    SmartDashboard.putNumber("Right Encoder", _rightMasterDrive.getSelectedSensorPosition(0));
+    SmartDashboard.putNumber("Heading",  _ahrs.getAngle());
   }
 
   /**
@@ -118,56 +133,57 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
   }
-}
-public Trajectory setMotionProfile(Waypoint[] waypoints) {
-  _rightMasterDrive.setSelectedSensorPosition(0, 0, 0);
-  _leftMasterDrive.setSelectedSensorPosition(0, 0, 0);
-  
-  _ahrs.zeroYaw();        
-  
-  SmartDashboard.putBoolean("Generated Profile", false);
 
-  Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.02, 1.7, 2.0, 60.0);
-  
-  Trajectory autonomousTrajectory = Pathfinder.generate(waypoints, config);
-  
-  SmartDashboard.putBoolean("Generated Profile", true);
+  public Trajectory setMotionProfile(Waypoint[] waypoints) {
+    _rightMasterDrive.setSelectedSensorPosition(0, 0, 0);
+    _leftMasterDrive.setSelectedSensorPosition(0, 0, 0);
+    
+    _ahrs.zeroYaw();        
+    
+    SmartDashboard.putBoolean("Generated Profile", false);
 
-  return autonomousTrajectory;
-}
+    Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.02, 1.7, 2.0, 60.0);
+    
+    Trajectory autonomousTrajectory = Pathfinder.generate(waypoints, config);
+    
+    SmartDashboard.putBoolean("Generated Profile", true);
 
-public void runMotionProfile(Trajectory trajectory) {
-  TankModifier modifier = new TankModifier(trajectory);
+    return autonomousTrajectory;
+  }
 
-  modifier.modify(0.71);
+  public void runMotionProfile(Trajectory trajectory) {
+    TankModifier modifier = new TankModifier(trajectory);
 
-  EncoderFollower leftFollower = new EncoderFollower(modifier.getLeftTrajectory());
-  EncoderFollower rightFollower = new EncoderFollower(modifier.getRightTrajectory());
+    modifier.modify(0.71);
 
-  leftFollower.configureEncoder(_leftMasterDrive.getSelectedSensorPosition(0), 1024, 0.1016);
-  rightFollower.configureEncoder(_rightMasterDrive.getSelectedSensorPosition(0), 1024, 0.1016);
+    EncoderFollower leftFollower = new EncoderFollower(modifier.getLeftTrajectory());
+    EncoderFollower rightFollower = new EncoderFollower(modifier.getRightTrajectory());
 
-  leftFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / 1.7, 0.0);
-  rightFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / 1.7, 0.0);
-//        right.configurePIDVA(0.01, 0.00003, 0.1, 1 / max_velocity, 0);
+    leftFollower.configureEncoder(_leftMasterDrive.getSelectedSensorPosition(0), 1024, 0.1016);
+    rightFollower.configureEncoder(_rightMasterDrive.getSelectedSensorPosition(0), 1024, 0.1016);
 
-  double outputLeft = leftFollower.calculate(_leftMasterDrive.getSelectedSensorPosition(0));
-  double outputRight = rightFollower.calculate(_rightMasterDrive.getSelectedSensorPosition(0));
+    leftFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / 1.7, 0.0);
+    rightFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / 1.7, 0.0);
+  //        right.configurePIDVA(0.01, 0.00003, 0.1, 1 / max_velocity, 0);
 
-  double gyro_heading = _ahrs.getAngle();    // Assuming the gyro is giving a value in degrees
-  double desired_heading = Pathfinder.r2d(leftFollower.getHeading());  // Should also be in degrees
+    double outputLeft = leftFollower.calculate(_leftMasterDrive.getSelectedSensorPosition(0));
+    double outputRight = rightFollower.calculate(_rightMasterDrive.getSelectedSensorPosition(0));
 
-  double angleDifference = Pathfinder.boundHalfDegrees(desired_heading - gyro_heading);
-  double turn = 0.8 * (-1.0/80.0) * angleDifference;
+    double gyro_heading = _ahrs.getAngle();    // Assuming the gyro is giving a value in degrees
+    double desired_heading = Pathfinder.r2d(leftFollower.getHeading());  // Should also be in degrees
 
-  SmartDashboard.putNumber("Right Profile", (outputRight + turn));
-  SmartDashboard.putNumber("Left Profile", (outputLeft - turn));
-  SmartDashboard.putNumber("Output Left", outputLeft);
-  SmartDashboard.putNumber("Output Right", outputRight);
-  SmartDashboard.putNumber("Turn", turn);
-  SmartDashboard.putNumber("Desired Heading", leftFollower.getHeading());
-  SmartDashboard.putNumber("Right Drive", -(outputRight + turn));
-  SmartDashboard.putNumber("Left Drive", -(outputLeft - turn));
-  
-  _drive.tankDrive(outputLeft - turn, outputRight - turn);
+    double angleDifference = Pathfinder.boundHalfDegrees(desired_heading - gyro_heading);
+    double turn = 0.8 * (-1.0/80.0) * angleDifference;
+
+    SmartDashboard.putNumber("Right Profile", (outputRight + turn));
+    SmartDashboard.putNumber("Left Profile", (outputLeft - turn));
+    SmartDashboard.putNumber("Output Left", outputLeft);
+    SmartDashboard.putNumber("Output Right", outputRight);
+    SmartDashboard.putNumber("Turn", turn);
+    SmartDashboard.putNumber("Desired Heading", leftFollower.getHeading());
+    SmartDashboard.putNumber("Right Drive", -(outputRight + turn));
+    SmartDashboard.putNumber("Left Drive", -(outputLeft - turn));
+    
+    _drive.tankDrive(outputLeft - turn, outputRight - turn);
+  }
 }
