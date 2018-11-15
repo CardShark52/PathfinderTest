@@ -30,13 +30,11 @@ import jaci.pathfinder.followers.*;
  * project.
  */
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private Trajectory _currentAutoTrajectory;
-  private WPI_TalonSRX _leftMasterDrive = new WPI_TalonSRX(10);
-  private WPI_TalonSRX _rightMasterDrive = new WPI_TalonSRX(11);
+  private WPI_TalonSRX _leftMasterDrive = new WPI_TalonSRX(Constants.leftMotorChannel);
+  private WPI_TalonSRX _rightMasterDrive = new WPI_TalonSRX(Constants.rightMotorChannel);
   private DifferentialDrive _drive = new DifferentialDrive(_rightMasterDrive, _leftMasterDrive);
   private AHRS _ahrs;
   private boolean _isNavX;
@@ -48,22 +46,23 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-
-
-    m_chooser.addDefault("Default Auto", kDefaultAuto);
-    m_chooser.addObject("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
-
     Waypoint[] points = new Waypoint[] {
       new Waypoint(4, 1, Pathfinder.d2r(-45)),      // Waypoint @ x=-4, y=-1, exit angle=-45 degrees
       new Waypoint(2, 2, 0),                        // Waypoint @ x=-2, y=-2, exit angle=0 radians
       new Waypoint(0, 0, 0)  // Waypoint @ x=0, y=0,   exit angle=0 radians
       };
       
-      Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.02, 1.7, 2.0, 60.0);
-      Trajectory trajectory = Pathfinder.generate(points, config);
+      // Trajectory.Config config = new Trajectory.Config(
+      //   Trajectory.FitMethod.HERMITE_CUBIC, 
+      //   Trajectory.Config.SAMPLES_HIGH, 
+      //   Constants.frequency, 
+      //   Constants.maxSpeed, 
+      //   Constants.acceleration, 
+      //   Constants.jerk);
 
-      TankModifier modifier = new TankModifier(trajectory).modify(0.5);
+      // Trajectory trajectory = Pathfinder.generate(points, config);
+
+      // TankModifier modifier = new TankModifier(trajectory).modify(Constants.wheelBase);
 
       //NavX Initialization
       try {
@@ -146,7 +145,13 @@ public class Robot extends TimedRobot {
     
     SmartDashboard.putBoolean("Generated Profile", false);
 
-    Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.02, 1.7, 2.0, 60.0);
+    Trajectory.Config config = new Trajectory.Config(
+      Trajectory.FitMethod.HERMITE_CUBIC, 
+      Trajectory.Config.SAMPLES_HIGH, 
+      Constants.frequency,
+      Constants.maxSpeed,
+      Constants.acceleration,
+      Constants.jerk);
     
     Trajectory autonomousTrajectory = Pathfinder.generate(waypoints, config);
     
@@ -155,16 +160,31 @@ public class Robot extends TimedRobot {
     leftFollower = new EncoderFollower();
     rightFollower = new EncoderFollower();
 
-    leftFollower.configureEncoder(_leftMasterDrive.getSelectedSensorPosition(0), 4096, 0.1016);
-    rightFollower.configureEncoder(_rightMasterDrive.getSelectedSensorPosition(0), 4096, 0.1016);
+    leftFollower.configureEncoder(
+      _leftMasterDrive.getSelectedSensorPosition(0), 
+      Constants.encoderTicksPerRotation, 
+      Constants.wheelDiameter);
+    rightFollower.configureEncoder(
+      _rightMasterDrive.getSelectedSensorPosition(0), 
+      Constants.encoderTicksPerRotation, 
+      Constants.wheelDiameter);
 
-    leftFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / 1.7, 0.0);
-    rightFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / 1.7, 0.0);
+    leftFollower.configurePIDVA(
+      Constants.kP,
+      Constants.kI,
+      Constants.kD,
+      Constants.kV,
+      Constants.kA);
+    rightFollower.configurePIDVA(
+      Constants.kP,
+      Constants.kI,
+      Constants.kD,
+      Constants.kV,
+      Constants.kA);
     return autonomousTrajectory;
   }
 
   public void runMotionProfile(Trajectory trajectory) {
-  //        right.configurePIDVA(0.01, 0.00003, 0.1, 1 / max_velocity, 0);
     TankModifier modifier = new TankModifier(trajectory);
     modifier.modify(0.71);
     leftFollower.setTrajectory(modifier.getLeftTrajectory());
