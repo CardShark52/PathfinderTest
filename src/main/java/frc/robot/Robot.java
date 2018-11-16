@@ -21,7 +21,9 @@ import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.SPI;
 import jaci.pathfinder.followers.*;
 
-
+enum staringPositions {
+  Left, Middle, Right;
+}
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the TimedRobot
@@ -30,8 +32,7 @@ import jaci.pathfinder.followers.*;
  * project.
  */
 public class Robot extends TimedRobot {
-  private String m_autoSelected;
-  private final SendableChooser<String> m_chooser = new SendableChooser<>();
+  private final SendableChooser<Waypoint[]> autoChooser = new SendableChooser<>();
   private Trajectory _currentAutoTrajectory;
   private WPI_TalonSRX _leftMasterDrive = new WPI_TalonSRX(Constants.leftMotorChannel);
   private WPI_TalonSRX _rightMasterDrive = new WPI_TalonSRX(Constants.rightMotorChannel);
@@ -46,31 +47,17 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    Waypoint[] points = new Waypoint[] {
-      new Waypoint(4, 1, Pathfinder.d2r(-45)),      // Waypoint @ x=-4, y=-1, exit angle=-45 degrees
-      new Waypoint(2, 2, 0),                        // Waypoint @ x=-2, y=-2, exit angle=0 radians
-      new Waypoint(0, 0, 0)  // Waypoint @ x=0, y=0,   exit angle=0 radians
-      };
-      
-      // Trajectory.Config config = new Trajectory.Config(
-      //   Trajectory.FitMethod.HERMITE_CUBIC, 
-      //   Trajectory.Config.SAMPLES_HIGH, 
-      //   Constants.frequency, 
-      //   Constants.maxSpeed, 
-      //   Constants.acceleration, 
-      //   Constants.jerk);
-
-      // Trajectory trajectory = Pathfinder.generate(points, config);
-
-      // TankModifier modifier = new TankModifier(trajectory).modify(Constants.wheelBase);
-
-      //NavX Initialization
-      try {
-        _ahrs = new AHRS(SPI.Port.kMXP);
-        _isNavX = true;
+    autoChooser.addDefault("Default Auto", Waypoints.defaultAuto);
+    autoChooser.addObject("Auto 2", Waypoints.longerAuto);
+    autoChooser.addObject("Auto 3", Waypoints.defaultAuto);
+    SmartDashboard.putData(autoChooser);
+    //NavX Initialization
+    try {
+      _ahrs = new AHRS(SPI.Port.kMXP);
+      _isNavX = true;
     } catch (RuntimeException ex) {
-         DriverStation.reportError("Error Connecting to navX" + ex.getMessage(), true);
-         _isNavX = false;
+      DriverStation.reportError("Error Connecting to navX" + ex.getMessage(), true);
+      _isNavX = false;
     }
     _ahrs.reset();
     SmartDashboard.putNumber("Heading", _ahrs.getAngle());
@@ -106,13 +93,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    Waypoint[] points = new Waypoint[] {
-      new Waypoint(0, 0, 0),
-      new Waypoint(1, 1, Pathfinder.d2r(45))    
-    };
-    _currentAutoTrajectory = this.setMotionProfile(points);
-    System.out.println("Auto selected: " + m_autoSelected);
+    _currentAutoTrajectory = this.setMotionProfile(autoChooser.getSelected());
   }
 
   /**
