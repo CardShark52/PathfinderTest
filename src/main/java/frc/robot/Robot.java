@@ -9,6 +9,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,9 +17,7 @@ import jaci.pathfinder.Trajectory;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import jaci.pathfinder.*;
 import jaci.pathfinder.modifiers.*;
-import com.kauailabs.navx.frc.AHRS;
-
-import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.AnalogGyro;
 import jaci.pathfinder.followers.*;
 
 enum staringPositions {
@@ -37,8 +36,7 @@ public class Robot extends TimedRobot {
   private WPI_TalonSRX _leftMasterDrive = new WPI_TalonSRX(Constants.leftMotorChannel);
   private WPI_TalonSRX _rightMasterDrive = new WPI_TalonSRX(Constants.rightMotorChannel);
   private DifferentialDrive _drive = new DifferentialDrive(_rightMasterDrive, _leftMasterDrive);
-  private AHRS _ahrs;
-  private boolean _isNavX;
+  private Gyro gyro;
   EncoderFollower rightFollower;
   EncoderFollower leftFollower;
   /**
@@ -53,14 +51,12 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData(autoChooser);
     //NavX Initialization
     try {
-      _ahrs = new AHRS(SPI.Port.kMXP);
-      _isNavX = true;
+      gyro = new AnalogGyro(1);
     } catch (RuntimeException ex) {
-      DriverStation.reportError("Error Connecting to navX" + ex.getMessage(), true);
-      _isNavX = false;
+      DriverStation.reportError("Error Connecting to gyro" + ex.getMessage(), true);
     }
-    _ahrs.reset();
-    SmartDashboard.putNumber("Heading", _ahrs.getAngle());
+    gyro.reset();
+    SmartDashboard.putNumber("Heading", gyro.getAngle());
     _leftMasterDrive.setSelectedSensorPosition(0, 0, 0);
     _rightMasterDrive.setSelectedSensorPosition(0, 0, 0);
   }
@@ -77,7 +73,7 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     SmartDashboard.putNumber("Left Encoder", _leftMasterDrive.getSelectedSensorPosition(0));
     SmartDashboard.putNumber("Right Encoder", _rightMasterDrive.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Heading",  _ahrs.getAngle());
+    SmartDashboard.putNumber("Heading", gyro.getAngle());
   }
 
   /**
@@ -120,9 +116,7 @@ public class Robot extends TimedRobot {
 
   public Trajectory setMotionProfile(Waypoint[] waypoints) {
     _rightMasterDrive.setSelectedSensorPosition(0, 0, 0);
-    _leftMasterDrive.setSelectedSensorPosition(0, 0, 0);
-    
-    _ahrs.zeroYaw();        
+    _leftMasterDrive.setSelectedSensorPosition(0, 0, 0);   
     
     SmartDashboard.putBoolean("Generated Profile", false);
 
@@ -174,7 +168,7 @@ public class Robot extends TimedRobot {
     double outputLeft = leftFollower.calculate(_leftMasterDrive.getSelectedSensorPosition(0));
     double outputRight = rightFollower.calculate(-_rightMasterDrive.getSelectedSensorPosition(0));
 
-    double gyro_heading = _ahrs.getAngle();    // Assuming the gyro is giving a value in degrees
+    double gyro_heading = gyro.getAngle();    // Assuming the gyro is giving a value in degrees
     double desired_heading = Pathfinder.r2d(leftFollower.getHeading());  // Should also be in degrees
 
     double angleDifference = Pathfinder.boundHalfDegrees(desired_heading - gyro_heading);
