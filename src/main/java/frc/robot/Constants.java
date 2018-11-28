@@ -1,14 +1,14 @@
 package frc.robot;
 
 public final class Constants {
-    public static final double wheelBase = 0.6;
+    public static final double wheelBase = 0.71;
 
     public static final int leftMotorChannel = 10;
     public static final int rightMotorChannel = 11;
 
     public static final double frequency = 0.02;
-    public static final double maxSpeed = 1.7;
-    public static final double acceleration = 2.0;
+    public static final double maxSpeed = 3.3;
+    public static final double acceleration = 1.0;
     public static final double jerk = 60.0;
     
     public static final int encoderTicksPerRotation = 4096;
