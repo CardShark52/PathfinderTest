@@ -9,8 +9,7 @@ package frc.robot;
 import com.analog.adis16448.frc.ADIS16448_IMU;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-// import edu.wpi.first.wpilibj.interfaces.Gyro;
-import edu.wpi.first.wpilibj.DriverStation;
+// import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Joystick;
@@ -18,7 +17,6 @@ import jaci.pathfinder.Trajectory;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import jaci.pathfinder.*;
 import jaci.pathfinder.modifiers.*;
-// import edu.wpi.first.wpilibj.AnalogGyro;
 import jaci.pathfinder.followers.*;
 
 /**
@@ -34,7 +32,6 @@ public class Robot extends TimedRobot {
   private WPI_TalonSRX _leftMasterDrive = new WPI_TalonSRX(Constants.leftMotorChannel);
   private WPI_TalonSRX _rightMasterDrive = new WPI_TalonSRX(Constants.rightMotorChannel);
   private DifferentialDrive _drive = new DifferentialDrive(_rightMasterDrive, _leftMasterDrive);
-  // private AnalogGyro gyro;
   EncoderFollower rightFollower;
   EncoderFollower leftFollower;
   private Joystick joystick = new Joystick(0);
@@ -50,12 +47,7 @@ public class Robot extends TimedRobot {
     autoChooser.addObject("Auto 2", Waypoints.longerAuto);
     autoChooser.addObject("Auto 3", Waypoints.defaultAuto);
     SmartDashboard.putData(autoChooser);
-    // NavX Initialization
-    try {
-      // gyro = new AnalogGyro(0);
-    } catch (RuntimeException ex) {
-      DriverStation.reportError("Error Connecting to gyro" + ex.getMessage(), true);
-    }
+
     gyro.reset();
     _leftMasterDrive.setSelectedSensorPosition(0, 0, 0);
     _rightMasterDrive.setSelectedSensorPosition(0, 0, 0);
@@ -110,7 +102,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     
 		/* get gamepad stick values */
-		double forwMod = 1;
+		double forwMod = -1;
 		double turnMod = 1;
 		if (joystick.getRawButton(12)) {
 			 turnMod = 0.70;
