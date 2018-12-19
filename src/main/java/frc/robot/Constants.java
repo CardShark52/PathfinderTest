@@ -9,7 +9,7 @@ public final class Constants {
     public static final double frequency = 0.02;
     public static final double maxSpeed = 3.3;
     public static final double acceleration = 1.0;
-    public static final double jerk = 60.0;
+    public static final double jerk = 10.0;
     
     public static final int encoderTicksPerRotation = 4096;
     public static final double wheelDiameter = 0.1016;

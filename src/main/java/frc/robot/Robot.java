@@ -45,7 +45,9 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     autoChooser.addDefault("Default Auto", Waypoints.defaultAuto);
     autoChooser.addObject("Auto 2", Waypoints.longerAuto);
-    autoChooser.addObject("Auto 3", Waypoints.defaultAuto);
+    autoChooser.addObject("Auto 3", Waypoints.auto3);
+    autoChooser.addObject("newPath", Waypoints.newPath);
+    autoChooser.addObject("CircleAuto", Waypoints.circle);
     SmartDashboard.putData(autoChooser);
 
     gyro.reset();
@@ -86,6 +88,7 @@ public class Robot extends TimedRobot {
     gyro.reset();    
     _currentAutoTrajectory = this.setMotionProfile(autoChooser.getSelected());
   }
+
 
   /**
    * This function is called periodically during autonomous.

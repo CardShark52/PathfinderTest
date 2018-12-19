@@ -16,4 +16,25 @@ public final class Waypoints {
         new Waypoint(4.0, 2.0, Pathfinder.d2r(0)),
         new Waypoint(5.0, 2.0, Pathfinder.d2r(0)),
     };
+
+    public static final Waypoint[] auto3 = new Waypoint[] {
+        new Waypoint(0.0, 0.0, Pathfinder.d2r(0)),
+        new Waypoint(1.5, 1.0, Pathfinder.d2r(0)),
+        new Waypoint(2.5, 1.0, Pathfinder.d2r(0)),
+        new Waypoint(4.0, 2.0, Pathfinder.d2r(0)),
+        new Waypoint(5.0, 2.0, Pathfinder.d2r(0)),
+    };
+
+    public static final Waypoint[] newPath = new Waypoint[] {
+        new Waypoint(0.0, 0.0, Pathfinder.d2r(0.0)),
+        new Waypoint(5.0, 6.0, Pathfinder.d2r(90.0)),
+    };
+
+    public static final Waypoint[] circle = new Waypoint[] {
+        new Waypoint(2.0, 2.0, Pathfinder.d2r(0.0)),
+        new Waypoint(4.0, 4.0, Pathfinder.d2r(90.0)),
+        new Waypoint(2.0, 6.0, Pathfinder.d2r(180.0)),
+        new Waypoint(0.0, 4.0, Pathfinder.d2r(-90.0)),
+        new Waypoint(2.0, 4.0, Pathfinder.d2r(0.0)),
+    };
 }
